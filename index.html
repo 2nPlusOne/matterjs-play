@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matter.js Demo</title>
+  <script src="libs/matter/matter.js"></script>
+  <script src="libs/matter/matter-attractors.js"></script>
+  <script src="libs/matter/matter-wrap.js"></script>
+  <script src="libs/matter/matter-tools.demo.js"></script>
+  <script src="libs/matter/matter-extras.js"></script>
+  <script src="libs/polyk.js"></script>
+  <script src="libs/polyk-extras.js"></script>
+  <script src="libs/pathseg.js"></script>
+  <script src="libs/svg-text-to-path-opentypejs.js"></script>
+  
+  <script src="slice.js"></script>
+  <script src="carve.js"></script>
+  <script src="planets.js"></script>
+  <script src="boids.js"></script>
+  <style type="text/css">
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    MatterTools.Demo.create({
+      preventZoom: false,
+      resetOnOrientation: true,
+      toolbar: {
+        reset: true,
+        fullscreen: true,
+        exampleSelect: true
+      },
+      examples: [
+        {
+          name: 'Slice',
+          id: 'slice',
+          init: Example.slice,
+        },
+        {
+          name: 'Carve',
+          id: 'carve',
+          init: Example.carve,
+        },
+        {
+          name: 'Planets',
+          id: 'planets',
+          init: Example.planets,
+        },
+        {
+          name: 'Boids',
+          id: 'boids',
+          init: Example.boids,
+        }
+      ]
+    });
+  </script>
+</body>
+
+</html>
