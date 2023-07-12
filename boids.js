@@ -1,303 +1,153 @@
 // import Matter.js library plugin
-Matter.use('matter-attractors');
+Matter.use('matter-wrap');
 
 // Define 'Example' object if not already defined
 var Example = Example || {};
 
-/**
- * This function creates a gravitational system simulation. The system consists
- * of randomly generated planets that attract each other based on their mass.
- * The planets will grow in mass (and size) when they collide.
- */
 Example.boids = function () {
-  // Define Matter.js modules
   var Engine = Matter.Engine,
+    Events = Matter.Events,
     Render = Matter.Render,
     Runner = Matter.Runner,
     World = Matter.World,
     Body = Matter.Body,
-    Mouse = Matter.Mouse,
-    Composite = Matter.Composite,
-    MouseConstraint = Matter.MouseConstraint,
-    Common = Matter.Common,
     Bodies = Matter.Bodies,
-    Events = Matter.Events;
+    Composite = Matter.Composite,
+    Mouse = Matter.Mouse,
+    MouseConstraint = Matter.MouseConstraint;
 
-  // Define constants
-  var G = 6.67408e-4;  // Gravitational constant (made stronger by 7 orders of magnitude)
+  var BOIDS_COUNT = 100;
+  var BOID_RADIUS = 4;
+  var BOID_COLOR = '#ffffff';
 
-  var SUN_MASS = 10000;
-  var SUN_COLOR = '#ffaa00';
-  var SUN_RADIUS = 30;
+  // adjust these factors to see the effect
+  var ALIGNMENT_FACTOR = 1; 
+  var COHESION_FACTOR = 1;
+  var SEPARATION_FACTOR = 1;
+  var VIEW_RADIUS = 100;
 
-  var NUM_INITIAL_PLANETS = 1000;
-  var STARTING_RADIUS_MIN_FACTOR = 0.08; // Adjust these factors as needed to achieve desired orbits
-  var STARTING_RADIUS_MAX_FACTOR = 0.6; // Adjust these factors as needed to achieve desired orbits
-
-  var NEW_PLANET_VELOCITY_FACTOR = .45; // Adjust this factor as needed to achieve desired orbits
-  var NEW_PLANET_RANDOM_VELOCITY_FACTOR = .25; // higher values will result in more chaotic orbits
-  var NEW_PLANET_MASS_MIN = 0.005;
-  var NEW_PLANET_MASS_MAX = 0.1;
-  var PLANET_RADIUS_SCALE_FACTOR = 10; // Adjust this factor as needed to achieve desired visual size (does not affect physics)
-
-  var TRACER_MASS_THRESHOLD = 1.2;
-  var TRACER_AGE = 5000; // ms
-  var TRACER_LINE_WIDTH = 3;
-
-  var MERGE_DELAY = 250; // ms
-  var PLANET_MASS_MAX = 2;
-
-  // Set a random seed for common module
-  Common._seed = Math.random() * 10000;
-
-  // Create an engine with zero gravity
   var engine = Engine.create();
-  engine.gravity.scale = 0;
-
-  // Store screen size for convenience
-  var screen = { height: window.innerHeight, width: window.innerWidth };
-  
-  // Create a renderer
+  engine.world.gravity.y = 0;
   var render = Render.create({
     element: document.body,
     engine: engine,
     options: {
-      width: screen.width,
-      height: screen.height,
+      width: window.innerWidth,
+      height: window.innerHeight,
       wireframes: false,
-    },
+    }
   });
   
-  // Create and run the runner
   var runner = Runner.create();
   Runner.run(runner, engine);
   Render.run(render);
   
-  // Get reference to the world
   var world = engine.world;
-
-  function gravity(bodyA, bodyB) {
-    // use Newton's law of gravitation
-    var bToA = Matter.Vector.sub(bodyB.position, bodyA.position),
-      distanceSq = Matter.Vector.magnitudeSquared(bToA) || 0.0001,
-      normal = Matter.Vector.normalise(bToA),
-      magnitude = -G * (bodyA.mass * bodyB.mass / distanceSq),
-      force = Matter.Vector.mult(normal, magnitude);
-
-    // to apply forces to both bodies
-    Matter.Body.applyForce(bodyA, bodyA.position, Matter.Vector.neg(force));
-    Matter.Body.applyForce(bodyB, bodyB.position, force);
-  }
-
-  // Create a central sun object'
-  var sun = Bodies.circle(screen.width / 2, screen.height / 2, SUN_RADIUS, {
-    isStatic: true,
-    mass: SUN_MASS,
-    render: { fillStyle: SUN_COLOR },
-    plugin: { attractors: [gravity] },
-  });
-  sun.tracer = { active: false, positions: [], maxPositions: 1000 };  // maxPositions limit to avoid memory overflow
-  // Add the sun to the world
-  World.add(world, sun);
-
-  /**
-   * This function creates a new planet with the given position and mass.
-   * If no position or mass is provided, it will generate them randomly.
-   */
-  var createNewPlanet = function (position, mass, velocity) {
-    var randomMass = mass || Common.random(NEW_PLANET_MASS_MIN, NEW_PLANET_MASS_MAX);
-    var scaledRadius = Math.cbrt(randomMass) * PLANET_RADIUS_SCALE_FACTOR;
-
-    // If position is not specified, place the planet at a random distance from the sun
-    if (!position) {
-      var distanceFromSun = Common.random(screen.width * STARTING_RADIUS_MIN_FACTOR, screen.width * STARTING_RADIUS_MAX_FACTOR);
-      var angleFromSun = Common.random(0, 2 * Math.PI);
-      position = {
-        x: screen.width / 2 + distanceFromSun * Math.cos(angleFromSun),
-        y: screen.height / 2 + distanceFromSun * Math.sin(angleFromSun)
-      };
-    }
-
-    var body = Bodies.circle(
-      position.x,
-      position.y,
-      scaledRadius,
-      {
-        mass: randomMass,
-        frictionAir: 0,
-        friction: 0,
-        plugin: {
-          attractors: [],
-        },
-      }
-    );
-
-    // If velocity is not specified, set it to a value that would result in a roughly circular orbit
-    if (!velocity) {
-      var distanceToSun = Math.sqrt(Math.pow(sun.position.x - position.x, 2) + Math.pow(sun.position.y - position.y, 2));
-      var orbitVelocity = Math.sqrt(sun.mass / distanceToSun);
-      // Increase the orbit velocity by some factor to compensate for the gravitational pull from other planets
-      orbitVelocity *= NEW_PLANET_VELOCITY_FACTOR;  // Adjust this factor as needed
-
-      // Apply random noise to the orbit velocity to make the orbits more interesting
-      orbitVelocity *= Common.random(1 - NEW_PLANET_RANDOM_VELOCITY_FACTOR, 1 + NEW_PLANET_RANDOM_VELOCITY_FACTOR);
-
-      // Calculate the angle between the planet and the sun      
-      var angleToSun = Math.atan2(sun.position.y - position.y, sun.position.x - position.x);
-      velocity = {
-        x: -orbitVelocity * Math.sin(angleToSun),
-        y: orbitVelocity * Math.cos(angleToSun)
-      };
-    }
-
-    // Add the tracer property to the body
-    body.tracer = { active: false, positions: [], maxPositions: 1000 };  // maxPositions limit to avoid memory overflow
-
-    // Add the timestamp property to the body
-    body.lastMerge = Date.now();
-
-    Body.setVelocity(body, velocity);
-    World.add(world, body);
-    return body;
-  };
-
-  // Create random planets
-  for (var i = 0; i < NUM_INITIAL_PLANETS; i += 1) {
-    createNewPlanet();
-  }
-
-  /**
-   * Event handler for the end of a collision. If the sun was involved, the other body is removed.
-   * If two bodies collided, they are removed and a new body is created at the location of the first,
-   * with a mass equal to the sum of the colliding bodies and a velocity based on the conservation of momentum.
-   */
-  Events.on(engine, 'collisionStart', function (event) {
-    event.pairs.forEach(function (pair) {
-      var bodyA = pair.bodyA;
-      var bodyB = pair.bodyB;
-
-      if (bodyA === sun) {
-        // If bodyA is sun, remove bodyB and create a new planet
-        World.remove(world, bodyB);
-        createNewPlanet(null, bodyB.mass, null).tracer = bodyB.tracer;
-      } else if (bodyB === sun) {
-        // If bodyB is sun, remove bodyA and create a new planet
-        World.remove(world, bodyA);
-        createNewPlanet(null, bodyA.mass, null).tracer = bodyA.tracer;
-      } else {
-        // Check if enough time has passed since the last growth event
-        var now = Date.now();
-        if (now - bodyA.lastMerge < MERGE_DELAY && now - bodyB.lastMerge < MERGE_DELAY) {
-          return; // Skip this pair if not enough time has passed
+  
+  var createBoid = function (x, y) {
+    var boid = Bodies.circle(x, y, BOID_RADIUS, {
+      frictionAir: 0.01,
+      render: {
+        fillStyle: BOID_COLOR
+      },
+      plugin: {
+        wrap: {
+          min: { x: 0, y: 0 },
+          max: { x: window.innerWidth, y: window.innerHeight }
         }
-        
-        var combinedMass = bodyA.mass + bodyB.mass;
-
-        // If neither of the bodies are the sun, create a new planet at their barycenter
-        // with new mass and velocity based on the conservation of momentum
-        var barycenter = {
-          x: (bodyA.position.x * bodyA.mass + bodyB.position.x * bodyB.mass) / combinedMass,
-          y: (bodyA.position.y * bodyA.mass + bodyB.position.y * bodyB.mass) / combinedMass
-        };
-
-        // If the combined mass exceeds the limit, set it to the limit
-        if (combinedMass > PLANET_MASS_MAX) {
-          combinedMass = PLANET_MASS_MAX;
-        }
-
-        // Calculate the velocity of the new body based on the conservation of momentum
-        var newVelocity = {
-          x: (bodyA.velocity.x * bodyA.mass + bodyB.velocity.x * bodyB.mass) / combinedMass,
-          y: (bodyA.velocity.y * bodyA.mass + bodyB.velocity.y * bodyB.mass) / combinedMass
-        };
-
-        World.remove(world, bodyA);
-        World.remove(world, bodyB);
-        createNewPlanet(barycenter, combinedMass, newVelocity).lastMerge = now;
       }
     });
-  });
+    return boid;
+  };
 
-  function drawTracers(render) {
-    let context = render.context;
-    let now = Date.now();
-    let ageLimitTimestamp = now - TRACER_AGE;
-
-    let bodies = Composite.allBodies(world);
-    
-    context.lineWidth = TRACER_LINE_WIDTH;
-
-    for (var i = 0; i < bodies.length; i++) {
-      var body = bodies[i];
-      var positions = body.tracer.positions;
-      var active = body.tracer.active;
-
-      // Start tracing if mass threshold exceeded
-      if (!active && body.mass > TRACER_MASS_THRESHOLD) {
-        active = true;
-      } 
-      
-      if (!active) continue;
-
-      // Record new position
-      positions.push({x: body.position.x, y: body.position.y, time: now});
-
-      // Remove oldest positions if max positions exceeded
-      while (positions.length > body.tracer.maxPositions) {
-        positions.shift();
-      }
-
-      // Draw tracer
-      context.strokeStyle = body.render.fillStyle;
-      if (positions.length > 1) {
-        for (var j = 1; j < positions.length; j++) {
-          const alpha = Math.max(0, (Math.max(positions[j - 1].time, positions[j].time) - ageLimitTimestamp) / TRACER_AGE);
-          context.globalAlpha = alpha;
-          
-          context.beginPath();
-          context.moveTo(positions[j - 1].x, positions[j - 1].y);
-          context.lineTo(positions[j].x, positions[j].y);
-          context.stroke();
-        }
-      }
-
-      // Reset globalAlpha to default
-      context.globalAlpha = 1;
-    }
+  for (var i = 0; i < BOIDS_COUNT; i++) {
+    var x = Math.random() * window.innerWidth;
+    var y = Math.random() * window.innerHeight;
+    World.add(world, createBoid(x, y));
   }
 
-  // draw body tracers 
-  Events.on(render, 'afterRender', function (event) {
-    drawTracers(render);
-
-    // console log the highest mass
-    var bodies = Composite.allBodies(world);
-    var maxMass = 0;
-    for (let body of bodies) {
-      // if body is sun, ignore
-      if (body === sun) continue;
-      if (body.mass > maxMass) {
-        maxMass = body.mass;
+  var getAlignment = function (boid, others) {
+    var velocity = { x: 0, y: 0 };
+    var count = 0;
+    for (let other of others) {
+      if (Matter.Vector.magnitude(Matter.Vector.sub(boid.position, other.position)) < VIEW_RADIUS) {
+        velocity = Matter.Vector.add(velocity, other.velocity);
+        count += 1;
       }
     }
-    console.log(maxMass);
+    if (count > 0) {
+      velocity = Matter.Vector.div(velocity, count);
+      velocity = Matter.Vector.sub(velocity, boid.velocity);
+      velocity = Matter.Vector.mult(velocity, ALIGNMENT_FACTOR); // multiply by alignment factor
+      velocity = Matter.Vector.div(velocity, 8);
+    }
+    return velocity;
+  };
+
+  var getCohesion = function (boid, others) {
+    var position = { x: 0, y: 0 };
+    var count = 0;
+    for (let other of others) {
+      if (Matter.Vector.magnitude(Matter.Vector.sub(boid.position, other.position)) < VIEW_RADIUS) {
+        position = Matter.Vector.add(position, other.position);
+        count += 1;
+      }
+    }
+    if (count > 0) {
+      position = Matter.Vector.div(position, count);
+      position = Matter.Vector.sub(position, boid.position);
+      position = Matter.Vector.mult(position, COHESION_FACTOR); // multiply by cohesion factor
+      position = Matter.Vector.div(position, 100);
+    }
+    return position;
+  };
+
+  var getSeparation = function (boid, others) {
+    var position = { x: 0, y: 0 };
+    for (let other of others) {
+      if (Matter.Vector.magnitude(Matter.Vector.sub(boid.position, other.position)) < VIEW_RADIUS) {
+        var diff = Matter.Vector.sub(boid.position, other.position);
+        diff = Matter.Vector.div(diff, Matter.Vector.magnitudeSquared(diff));
+        position = Matter.Vector.add(position, diff);
+      }
+    }
+    position = Matter.Vector.mult(position, SEPARATION_FACTOR); // multiply by separation factor
+    return position;
+  };
+
+  // apply a random starting velocity to all boids
+  var boids = Composite.allBodies(world);
+  for (let boid of boids) {
+    Body.setVelocity(boid, { x: Math.random() * 10 - 5, y: Math.random() * 10 - 5 });
+  }
+
+  // apply alignment, cohesion and separation rules
+  Events.on(engine, 'beforeUpdate', function (event) {
+    var bodies = Composite.allBodies(engine.world);
+    for (let boid of bodies) {
+      var others = bodies.filter(function (other) { return other !== boid; });
+      var alignment = getAlignment(boid, others);
+      var cohesion = getCohesion(boid, others);
+      var separation = getSeparation(boid, others);
+      var velocity = Matter.Vector.add(boid.velocity, alignment);
+      velocity = Matter.Vector.add(velocity, cohesion);
+      velocity = Matter.Vector.add(velocity, separation);
+      Body.setVelocity(boid, velocity);
+    }
   });
 
-
-  // Create a mouse constraint to allow for planet dragging
   var mouse = Mouse.create(render.canvas);
   var mouseConstraint = MouseConstraint.create(engine, {
     mouse: mouse,
     constraint: {
-      stiffness: 0.1,
+      stiffness: 0.2,
       render: { visible: false },
     },
   });
 
-  // Add mouseConstraint to the world
   Composite.add(world, mouseConstraint);
   render.mouse = mouse;
-
+  
   return {
     engine: engine,
     runner: runner,
