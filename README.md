@@ -1,5 +1,5 @@
 # Matter.js Experiments
- A handful of playful experiments with Matter.js
+ A handful of playful experiments with [Matter.js](https://brm.io/matter-js/)
 
 ## Setup
 1. Clone this repo
