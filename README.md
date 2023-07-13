@@ -3,9 +3,10 @@
 
 ## Setup
 1. Clone this repo
-2. Start the server: `python -m http.server` (or other similar command)
-3. Open `localhost:8000` in your browser
-4. Have fun!
+2. Open a terminal session in the root directory
+3. Start the server: `python -m http.server` (or other similar command)
+4. Open `localhost:8000` in your browser
+5. Have fun!
 
 ## Experiments
 ### Slice
@@ -23,5 +24,5 @@ Watch the formation of a 2D planetary system! This experiment utilizes the [matt
 ### Boids
 Enjoy flocks of bird-like agents (boids) that exhibit emergent behavior using three simple rules: alignment, cohesion, and separation. Alignment steers boids towards the average heading of their neighbors. Cohesion steers boids towards the average position of their neighbors. Separation steers boids away from their neighbors to avoid crowding. The boids will gently swerve away from the mouse to avoid it. The [matter-wrap](https://github.com/liabru/matter-wrap) plugin is used to wrap the boids around the screen. Screen wrapping is disabled by default in favor of the boids redirecting themselves at the edges of the screen, resulting in more interesting behavior.
 
-The boids algorithm was first developed by Craig Reynolds in 1986, detailed further in his [paper presented at SIGGRAPH'87](https://citeseerx.ist.psu.edu/doc/10.1.1.317.3619). While there are many online resources about boids, I found [this lab](https://people.ece.cornell.edu/land/courses/ece4760/labs/s2021/Boids/Boids.html#Recommended-parameter-values) published by the Cornell Department of Electrical and Computer Engineering especially helpful in understanding the algorithm and tuning its parameters.
+The boids algorithm was first developed by Craig Reynolds in 1986, detailed further in his [paper presented at SIGGRAPH'87](https://citeseerx.ist.psu.edu/doc/10.1.1.317.3619). While there are many online resources about boids, I found [this lab](https://people.ece.cornell.edu/land/courses/ece4760/labs/s2021/Boids/Boids.html#Background-and-Introduction) published by the Cornell Department of Electrical and Computer Engineering especially helpful in understanding the algorithm and tuning its parameters.
 [![Boids](./media/boids.gif)](https://matter.rwebb.dev/#boids)
