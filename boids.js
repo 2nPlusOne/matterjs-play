@@ -228,7 +228,6 @@ Example.boids = function () {
   // steering vector.
   var getSteering = function (boid) {
     var neighbors = getNeighbors(boid);
-    console.log(neighbors);
     var cohesion = getCohesion(boid, neighbors.neighborsToMatch);
     var separation = getSeparation(boid, neighbors.neighborsToAvoid);
     var alignment = getAlignment(boid, neighbors.neighborsToMatch);
@@ -300,6 +299,7 @@ Example.boids = function () {
       var head = Vector.add(position, forward);
       render.context.beginPath();
       render.context.strokeStyle = "white";
+      render.context.lineWidth = 2;
       render.context.moveTo(position.x, position.y);
       render.context.lineTo(head.x, head.y);
       render.context.stroke();
