@@ -21,5 +21,7 @@ Watch the formation of a 2D planetary system! This experiment utilizes the [matt
 ![Planets](./media/planets.gif)
 
 ### Boids
-Enjoy flocks of bird-like agents (boids) that exhibit emergent behavior using three simple rules: alignment, cohesion, and separation. Alignment steers boids towards the average heading of their neighbors. Cohesion steers boids towards the average position of their neighbors. Separation steers boids away from their neighbors to avoid crowding. The boids are also attracted to the mouse position. The [matter-wrap](https://github.com/liabru/matter-wrap) plugin is used to wrap the boids around the screen.
+Enjoy flocks of bird-like agents (boids) that exhibit emergent behavior using three simple rules: alignment, cohesion, and separation. Alignment steers boids towards the average heading of their neighbors. Cohesion steers boids towards the average position of their neighbors. Separation steers boids away from their neighbors to avoid crowding. The boids will gently swerve away from the mouse to avoid it. The [matter-wrap](https://github.com/liabru/matter-wrap) plugin is used to wrap the boids around the screen. Screen wrapping is disabled by default in favor of the boids redirecting themselves at the edges of the screen, resulting in more interesting behavior.
+
+The boids algorithm was first developed by Craig Reynolds in 1986, detailed further in his [paper presented at SIGGRAPH'87](https://citeseerx.ist.psu.edu/doc/10.1.1.317.3619). I obtained guidance on the algorithm and parameter tuning from a [lab](https://people.ece.cornell.edu/land/courses/ece4760/labs/s2021/Boids/Boids.html#Recommended-parameter-values) published by the Cornell Department of Electrical and Computer Engineering.
 ![Boids](./media/boids.gif)
