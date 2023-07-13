@@ -1,4 +1,4 @@
-# Matter.js Experiments
+# Matter.js Experiments [![Netlify Status](https://api.netlify.com/api/v1/badges/b84c8b30-ba85-43dc-8d97-518c83f60bac/deploy-status)](https://app.netlify.com/sites/matterjsplay/deploys)
  A handful of playful experiments with [Matter.js](https://brm.io/matter-js/)
 
 ## Setup
